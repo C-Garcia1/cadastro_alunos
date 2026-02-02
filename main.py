@@ -9,7 +9,13 @@ alunos = [
 
 id_disponiveis = list(range(100, 1000))
 
-cursos_disponiveis = ['Análise e Desenvolvimento de Sistemas', 'Ciência da Computação', 'Engenharia de Computação', 'Engenharia de Software', 'Redes de Computadores']
+cursos_disponiveis = [
+                      {'id_curso': 1, 'nome_curso': 'Análise e Desenvolvimento de Sistemas'}, 
+                      {'id_curso': 2, 'nome_curso': 'Ciência da Computação'}, 
+                      {'id_curso': 3, 'nome_curso': 'Engenharia de Computação'}, 
+                      {'id_curso': 4, 'nome_curso': 'Engenharia de Software'}, 
+                      {'id_curso': 5, 'nome_curso': 'Redes de Computadores'}
+                    ]
 
 def exibir_nome_programa():
     titulo = 'SISTEMA DE ALUNOS'
@@ -36,6 +42,15 @@ def voltar_ao_menu_principal():
     input('\nPressione uma tecla para retornar ao menu principal: ')
     main()
 
+def listar_cursos_disponiveis(): 
+    print('Cursos Disponiveis:')
+    for curso in cursos_disponiveis:
+        id_curso = curso['id_curso']
+        nome_curso = curso['nome_curso']
+        print(f'\nID: {id_curso} - Nome: {nome_curso}')
+
+
+
 def cadastrar_alunos():
     exibir_titulo('CADASTRO DE ALUNOS')
 
@@ -46,17 +61,33 @@ def cadastrar_alunos():
     nome_aluno = input('Informe o NOME COMPLETO do aluno:')
     
     idade_aluno = int(input('Informe a idade do aluno:'))
-    if idade_aluno < 17:
-        print('Este aluno não pode ser cadastrado devido sua idade.')
+    if idade_aluno >= 17:
+        pass
+    else:
+        print('O Aluno não pode ser cadastrado devido sua idade!')
+        voltar_ao_menu_principal()
 
+    ##listar_cursos_disponiveis()
+    for curso in cursos_disponiveis: 
+        id_curso = curso['id_curso']
+        nome_curso = curso['nome_curso']
+        curso_aluno = int(input('\nInforme o ID do curso do aluno:'))
+        if curso_aluno == curso['id_curso']:
+            alunos.append({'id': id_aluno, 'nome': nome_aluno, 'idade': idade_aluno, 'curso': nome_curso})
+            print(f'O Aluno(a) {nome_aluno} de ID {id_aluno} foi cadastrado no curso de {nome_curso} com sucesso!')
+            break
+        else: 
+            print('ID ou Curso indisponivel')
+            break
+     
 
-    curso_aluno = input('Informe o curso do aluno:')
     
-    if curso_aluno in cursos_disponiveis:
-        alunos.append({'id': id_aluno,'nome': nome_aluno, 'idade': idade_aluno, 'curso': curso_aluno})
-        print(f'O Aluno(a) {nome_aluno} de ID {id_aluno} foi cadastrado no curso de {curso_aluno} com sucesso!')
-    else: 
-        print('Este curso não está disponivel')
+    
+    
+    
+    
+    
+        
 
 
 def listar_alunos(): 
