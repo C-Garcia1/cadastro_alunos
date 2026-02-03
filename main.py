@@ -49,46 +49,37 @@ def listar_cursos_disponiveis():
         nome_curso = curso['nome_curso']
         print(f'\nID: {id_curso} - Nome: {nome_curso}')
 
-
-
 def cadastrar_alunos():
-    exibir_titulo('CADASTRO DE ALUNOS')
+    while True:
+        exibir_titulo('CADASTRO DE ALUNOS')
 
-    id_aluno = random.choice(id_disponiveis)
-    id_disponiveis.remove(id_aluno)
-
-
-    nome_aluno = input('Informe o NOME COMPLETO do aluno:')
-    
-    idade_aluno = int(input('Informe a idade do aluno:'))
-    if idade_aluno >= 17:
-        pass
-    else:
-        print('O Aluno não pode ser cadastrado devido sua idade!')
-        voltar_ao_menu_principal()
-
-    ##listar_cursos_disponiveis()
-    for curso in cursos_disponiveis: 
-        id_curso = curso['id_curso']
-        nome_curso = curso['nome_curso']
-        curso_aluno = int(input('\nInforme o ID do curso do aluno:'))
-        if curso_aluno == curso['id_curso']:
-            alunos.append({'id': id_aluno, 'nome': nome_aluno, 'idade': idade_aluno, 'curso': nome_curso})
-            print(f'O Aluno(a) {nome_aluno} de ID {id_aluno} foi cadastrado no curso de {nome_curso} com sucesso!')
-            break
-        else: 
-            print('ID ou Curso indisponivel')
-            break
-     
-
-    
-    
-    
-    
-    
-    
+        nome_aluno = input('Informe o nome do aluno: ')
         
+        idade_aluno = int(input('Informe a idade do aluno:'))
+        if idade_aluno < 17:
+            print('Não é possivel cadastrar o aluno devido sua idade!')
+            break
 
+        listar_cursos_disponiveis()
+        curso_cadastrar = int(input("Informe o ID do curso: ")) 
+        for curso in cursos_disponiveis:
+            if curso_cadastrar == curso['id_curso']:
+                nome_curso = curso['nome_curso']
+                id_aluno = random.choice(id_disponiveis)
+                id_disponiveis.remove(id_aluno)
+                alunos.append({'id': id_aluno, 'nome': nome_aluno, 'idade': idade_aluno, 'curso': nome_curso})
+                print(f'Aluno (a) {nome_aluno} de ID {id_aluno} foi cadastrado com sucesso no curso de {nome_curso}!')
+                break
+        else:
+            print("Curso não encontrado!")
+            break
+            
+        opcao = input('Deseja cadastrar mais alunos (S/N)? ').lower()
+        if opcao == 's':
+            pass
+        else:
+            break
+        
 
 def listar_alunos(): 
     exibir_titulo('LISTA DE ALUNOS')
