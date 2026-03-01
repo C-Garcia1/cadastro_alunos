@@ -23,8 +23,7 @@ def exibir_titulo(opcao):
 
 def voltar_ao_menu_principal():
     input('\nPressione uma tecla para retornar ao menu principal: ')
-    main()
-
+    
 def listar_cursos_disponiveis(): 
     conexao = conectar_banco()
     cursor = conexao.cursor()
@@ -133,7 +132,7 @@ def editar_info_alunos(conexao):
             if not id_valido: 
                 print('\nID não encontrado!')
                 validacao_id = input('\nDeseja tentar novamente(S/N)? ').lower()
-                if validacao_id == 's':
+                if validacao_id != 's':
                     break
                 else: 
                     continue
@@ -216,7 +215,7 @@ def excluir_aluno(conexao):
     while True: 
         cursor = conexao.cursor()
         
-        exibir_titulo('LISTA DE ALUNOS')
+        exibir_titulo('EXCLUIR REGISTROS ALUNOS')
 
         cursor.execute("""
             SELECT alunos.id_aluno,
@@ -253,7 +252,7 @@ def excluir_aluno(conexao):
             else:
                 break
 
-        confirmacao = input('Tem certeza que deseja deletar? (S/N)').lower().strip()
+        confirmacao = input('Tem certeza que deseja deletar? (S/N): ').lower().strip()
         if confirmacao != 's':
             print('Operação cancelada!')
             continue
@@ -275,6 +274,8 @@ def menu_principal(conexao):
 
     while True:
         try:
+            limpar_tela()
+            exibir_titulo('MENU PRINCIPAL')
             print('\n1- Cadastrar aluno')
             print('2- Listar alunos')
             print('3- Editar informações do aluno')
@@ -311,7 +312,6 @@ def menu_principal(conexao):
 def main():
         conexao = conectar_banco()
         try:
-            limpar_tela()
             exibir_nome_programa()
             menu_principal(conexao)
         finally:
