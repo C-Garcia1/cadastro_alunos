@@ -300,7 +300,7 @@ def menu_principal(conexao):
                 break
             else: 
                 print('Erro! Opção Inválida!')
-        except ValueError as v: 
+        except ValueError: 
             print('São aceitos apenas números inteiros positivos!')
             validao_erro = input('Deseja tentar novamente(S/N)? ').lower()
             if validao_erro != 's':
