@@ -20,7 +20,7 @@ def exibir_titulo(opcao):
     linha = '-' *len(opcao)
     print(linha, opcao, linha)
     print()
-    
+
 def voltar_ao_menu_principal():
     input('\nPressione uma tecla para retornar ao menu principal: ')
     main()
@@ -63,7 +63,7 @@ def cadastrar_alunos(conexao):
         
         while True:
             try:
-                curso_cadastrar = int(input('Informe o ID do curso: '))
+                curso_cadastrar = int(input('\nInforme o ID do curso: '))
             except (ValueError, TypeError) as v: 
                 v = 'Digite apenas números posititos!'
                 print(f'\n{v}')
@@ -121,10 +121,28 @@ def editar_info_alunos(conexao):
     while True: 
         limpar_tela()
         exibir_titulo('MODIFICAÇÃO DE DADOS')
+
         try: 
             id_aluno= int(input('Informe o ID do aluno:'))
+            cursor.execute("""
+                        SELECT 1 FROM alunos WHERE id_aluno = ?
+                        """, (id_aluno,))
+            
+            id_valido = cursor.fetchone()
+            
+            if not id_valido: 
+                print('\nID não encontrado!')
+                validacao_id = input('\nDeseja tentar novamente(S/N)? ').lower()
+                if validacao_id == 's':
+                    break
+                else: 
+                    continue
+        
         except ValueError as v: 
-            print(v)
+            print('\nInforme um ID válido (Somente número POSITIVOS)')
+            validacao = input('\nDeseja tentar novamente(S/N)? ').lower()
+            if validacao != 's':
+                break
             continue
 
         cursor.execute("""
@@ -139,7 +157,7 @@ def editar_info_alunos(conexao):
                     """, (id_aluno,))
 
         aluno = cursor.fetchone()
-
+        
         if aluno: 
             print('Aluno Encontrado!')
             print(f'\nNome: {aluno[0]} | Idade: {aluno[1]} | Curso: {aluno[2]}')
@@ -281,11 +299,14 @@ def menu_principal(conexao):
                 break
             else: 
                 print('Erro! Opção Inválida!')
-        except ValueError as v:
-            v = 'Erro! Apenas números são aceitos!'
-            print(v) 
-
-     
+        except ValueError as v: 
+            print('São aceitos apenas números inteiros positivos!')
+            validao_erro = input('Deseja tentar novamente(S/N)? ').lower()
+            if validao_erro != 's':
+                print('Encerrando Programa...')
+                break
+            else: 
+                continue
 
 def main():
         conexao = conectar_banco()
@@ -295,7 +316,6 @@ def main():
             menu_principal(conexao)
         finally:
             conexao.close()
-
 
 if __name__ == "__main__":
     main()
