@@ -1,33 +1,16 @@
 import os 
-import random
+import sqlite3
 
-alunos = [  
-            {'id': 123, 'nome': 'Luiz Carlos Dos Santos', 'idade': 18, 'curso': 'Engenharia de Software'},
-            {'id': 321, 'nome': 'Brenda Pontes', 'idade': 21, 'curso': 'Redes de Computadores'},
-            {'id': 213, 'nome': 'Diego Gonçalves', 'idade': 42, 'curso': 'Análise e Desenvolvimento de Sistemas'}
-            ]
 
-id_disponiveis = list(range(100, 1000))
-
-cursos_disponiveis = [
-                      {'id_curso': 1, 'nome_curso': 'Análise e Desenvolvimento de Sistemas'}, 
-                      {'id_curso': 2, 'nome_curso': 'Ciência da Computação'}, 
-                      {'id_curso': 3, 'nome_curso': 'Engenharia de Computação'}, 
-                      {'id_curso': 4, 'nome_curso': 'Engenharia de Software'}, 
-                      {'id_curso': 5, 'nome_curso': 'Redes de Computadores'}
-                    ]
+def conectar_banco():
+    conexao = sqlite3.connect('sql/banco.db')
+    conexao.execute("PRAGMA foreign_keys = ON")
+    return conexao
 
 def exibir_nome_programa():
     titulo = 'SISTEMA DE ALUNOS'
     linha = '-' * len(titulo)
     print(linha, titulo, linha)
-
-def exibir_menu():
-    print('\n1- Cadastrar anluno')
-    print('2- Listar alunos')
-    print('3- Editar aluno')
-    print('4- Excluir aluno')
-    print('5- Sair\n')
 
 def limpar_tela():
     os.system('cls' if os.name == 'nt' else 'clear')
@@ -43,85 +26,275 @@ def voltar_ao_menu_principal():
     main()
 
 def listar_cursos_disponiveis(): 
+    conexao = conectar_banco()
+    cursor = conexao.cursor()
+
+    cursor.execute("SELECT id_curso, nome_curso FROM cursos")
+
+    cursos_disponiveis = cursor.fetchall()
+    
     print('Cursos Disponiveis:')
     for curso in cursos_disponiveis:
-        id_curso = curso['id_curso']
-        nome_curso = curso['nome_curso']
-        print(f'\nID: {id_curso} - Nome: {nome_curso}')
+        print(f'\nID: {curso[0]} - Nome: {curso[1]}')
+    
+    conexao.close()
 
-def cadastrar_alunos():
+def cadastrar_alunos(conexao):
+
+    cursor = conexao.cursor()
     while True:
+        
         exibir_titulo('CADASTRO DE ALUNOS')
 
-        nome_aluno = input('Informe o nome do aluno: ')
+        nome_aluno = input('Informe o nome do aluno: ').strip()
         
-        idade_aluno = int(input('Informe a idade do aluno:'))
-        if idade_aluno < 17:
-            print('Não é possivel cadastrar o aluno devido sua idade!')
-            break
-
-        listar_cursos_disponiveis()
-        curso_cadastrar = int(input("Informe o ID do curso: ")) 
-        for curso in cursos_disponiveis:
-            if curso_cadastrar == curso['id_curso']:
-                nome_curso = curso['nome_curso']
-                id_aluno = random.choice(id_disponiveis)
-                id_disponiveis.remove(id_aluno)
-                alunos.append({'id': id_aluno, 'nome': nome_aluno, 'idade': idade_aluno, 'curso': nome_curso})
-                print(f'Aluno (a) {nome_aluno} de ID {id_aluno} foi cadastrado com sucesso no curso de {nome_curso}!')
+        while True: 
+            try:
+                idade_aluno = int(input('Informe a idade do aluno: '))
+                if idade_aluno < 17 or idade_aluno > 60:
+                    print('\nNão é possivel cadastrar o aluno devido sua idade!')
+                    continue
                 break
-        else:
-            print("Curso não encontrado!")
-            break
+            except ValueError as v:
+                print(v)
+                continue
             
+        listar_cursos_disponiveis()
+        
+        while True:
+            try:
+                curso_cadastrar = int(input('Informe o ID do curso: '))
+            except (ValueError, TypeError) as v: 
+                v = 'Digite apenas números posititos!'
+                print(f'\n{v}')
+                continue
+            
+            cursor.execute("SELECT id_curso, nome_curso FROM cursos")
+
+            cursos_disponiveis = cursor.fetchall()
+            curso_encontrado = False
+
+            for curso in cursos_disponiveis:            
+                if curso_cadastrar == curso[0]:
+                    nome_curso = curso[1]
+                    cursor.execute("""INSERT INTO alunos (nome_aluno, idade_aluno, id_curso)
+                                VALUES (?, ?, ?)
+                                """, (nome_aluno, idade_aluno, curso_cadastrar))
+                    conexao.commit()
+                    print(f'Aluno (a) {nome_aluno} foi cadastrado com sucesso no curso de {nome_curso}!')
+                    curso_encontrado = True
+                    break
+            
+            if not curso_encontrado:
+                print("\nCurso não encontrado!")
+                continue
+            break
+                
         opcao = input('Deseja cadastrar mais alunos (S/N)? ').lower()
         if opcao == 's':
-            pass
+            continue
         else:
+            break
+            
+def listar_alunos(conexao): 
+    cursor = conexao.cursor()
+    
+    exibir_titulo('LISTA DE ALUNOS')
+
+    cursor.execute("""
+        SELECT alunos.id_aluno,
+               alunos.nome_aluno,
+               alunos.idade_aluno,
+               cursos.nome_curso
+        FROM alunos
+        JOIN cursos
+        ON alunos.id_curso = cursos.id_curso
+    """)
+    
+    alunos = cursor.fetchall()
+    for aluno in alunos:
+        print(f'\nId: {aluno[0]} - Nome: {aluno[1]} - Idade: {aluno[2]} - Curso: {aluno[3]}')
+
+def editar_info_alunos(conexao):
+    cursor = conexao.cursor()
+
+    while True: 
+        limpar_tela()
+        exibir_titulo('MODIFICAÇÃO DE DADOS')
+        try: 
+            id_aluno= int(input('Informe o ID do aluno:'))
+        except ValueError as v: 
+            print(v)
+            continue
+
+        cursor.execute("""
+                        SELECT 
+                            alunos.nome_aluno,
+                            alunos.idade_aluno,
+                            cursos.nome_curso
+                        FROM alunos
+                        JOIN cursos 
+                        ON alunos.id_curso = cursos.id_curso
+                        WHERE alunos.id_aluno = ?
+                    """, (id_aluno,))
+
+        aluno = cursor.fetchone()
+
+        if aluno: 
+            print('Aluno Encontrado!')
+            print(f'\nNome: {aluno[0]} | Idade: {aluno[1]} | Curso: {aluno[2]}')
+            
+            nome_novo = input('Informe o nome do aluno: ')
+            
+            while True:
+                try:
+                    idade_nova = int(input('Informe a idade do aluno: '))
+                    if idade_nova < 17 or idade_nova > 60:
+                        print('Idade inválida!')
+                        continue
+                except ValueError as v: 
+                    print(v)
+                    continue
+                break
+
+            listar_cursos_disponiveis()
+            
+            while True:
+                try: 
+                    curso_novo = int(input('Informe o ID do curso: '))
+                except ValueError: 
+                    print('Erro!')
+                    continue
+               
+                cursor.execute(
+                                "SELECT 1 FROM cursos WHERE id_curso = ?",
+                                (curso_novo,)
+                                )
+
+                curso_valido = cursor.fetchone()  
+
+                if not curso_valido:
+                    print("Curso não encontrado!")
+                    continue
+                break         
+        
+            cursor.execute("""UPDATE alunos 
+                        SET nome_aluno = ?, idade_aluno = ?, id_curso = ?
+                        WHERE id_aluno = ?
+                        """, (nome_novo, idade_nova, curso_novo, id_aluno))
+            conexao.commit()
+            print(f'Aluno (a) {nome_novo} teve seus dados editados com SUCESSO!')
+
+        else: 
+            print('Aluno não encontrado!')
+            continue
+            
+        opcao = input('Deseja editar mais alunos (S/N)? ').lower()
+        if opcao != 's':
+            break
+
+def excluir_aluno(conexao):
+    
+    while True: 
+        cursor = conexao.cursor()
+        
+        exibir_titulo('LISTA DE ALUNOS')
+
+        cursor.execute("""
+            SELECT alunos.id_aluno,
+                alunos.nome_aluno,
+                alunos.idade_aluno,
+                cursos.nome_curso
+            FROM alunos
+            JOIN cursos
+            ON alunos.id_curso = cursos.id_curso
+        """)
+        
+        alunos = cursor.fetchall()
+        for aluno in alunos:
+            print(f'\nId: {aluno[0]} - Nome: {aluno[1]} - Idade: {aluno[2]} - Curso: {aluno[3]}')
+
+        try: 
+            id_aluno = int(input('Informe o ID do Aluno que deseja deletar: '))
+        except ValueError:
+            print('Erro!')
+            continue
+                    
+        cursor.execute('''
+                        SELECT 1 FROM alunos
+                        WHERE id_aluno = ?
+                        ''', (id_aluno,))
+        
+        aluno_valido = cursor.fetchone()
+
+        if not aluno_valido:
+            print('Aluno não encontrado.')
+            confirmacao = input('Deseja tentar novamente? (S/N)').lower().strip()
+            if confirmacao == 's':
+                continue
+            else:
+                break
+
+        confirmacao = input('Tem certeza que deseja deletar? (S/N)').lower().strip()
+        if confirmacao != 's':
+            print('Operação cancelada!')
+            continue
+
+        cursor.execute('''
+                            DELETE FROM alunos
+                            WHERE id_aluno = ?
+                            ''', (id_aluno,))
+        
+        conexao.commit()
+        print('Aluno deletado com SUCESSO!')
+            
+        opcao = input('Deseja excluir mais alunos? (S/N): ').lower()
+        if opcao != 's':
             break
         
 
-def listar_alunos(): 
-    exibir_titulo('LISTA DE ALUNOS')
-    for i in alunos:
-        id_aluno = i['id']
-        nome_aluno = i['nome']
-        idade_aluno = i['idade']
-        curso_aluno = i['curso']
+def menu_principal(conexao):
 
-        print(f'\nId: {id_aluno} - Nome: {nome_aluno} - Idade: {idade_aluno} - Curso: {curso_aluno}')
-
-
-def escolher_opcao():
-    try:
-        escolha = int(input('Escolha uma das opções:').strip())
-        
-        if escolha == 1: 
-            cadastrar_alunos()
-            voltar_ao_menu_principal()
-        elif escolha == 2: 
-            listar_alunos()
-            voltar_ao_menu_principal()
-        elif escolha == 3: 
-            print('Editando')
-        elif escolha == 4: 
-            print('Excluindo')
-        elif escolha == 5: 
-            print('Encerrando Programa...')
+    while True:
+        try:
+            print('\n1- Cadastrar aluno')
+            print('2- Listar alunos')
+            print('3- Editar informações do aluno')
+            print('4- Excluir aluno')
+            print('5- Sair\n')
+            escolha = int(input('Escolha uma das opções:').strip())
             
-        else: 
-            print('Erro! Opção Inválida!')
-    except ValueError as v:
-        v = 'Erro! Apenas números são aceitos!'
-        print(v) 
+            if escolha == 1: 
+                cadastrar_alunos(conexao)
+                voltar_ao_menu_principal()
+            elif escolha == 2: 
+                listar_alunos(conexao)
+                voltar_ao_menu_principal()
+            elif escolha == 3: 
+                editar_info_alunos(conexao)
+                voltar_ao_menu_principal()
+            elif escolha == 4: 
+                excluir_aluno(conexao)
+                voltar_ao_menu_principal()
+            elif escolha == 5: 
+                print('Encerrando Programa...')
+                break
+            else: 
+                print('Erro! Opção Inválida!')
+        except ValueError as v:
+            v = 'Erro! Apenas números são aceitos!'
+            print(v) 
 
      
 
 def main():
-        limpar_tela()
-        exibir_nome_programa()
-        exibir_menu()
-        escolher_opcao()
+        conexao = conectar_banco()
+        try:
+            limpar_tela()
+            exibir_nome_programa()
+            menu_principal(conexao)
+        finally:
+            conexao.close()
 
 
 if __name__ == "__main__":
